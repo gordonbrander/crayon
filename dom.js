@@ -1,5 +1,10 @@
 import {transformCartesian} from './draw'
-import {DEVICE_PIXEL_RATIO} from './utils'
+
+export const DEVICE_PIXEL_RATIO = (
+    'devicePixelRatio' in window
+  ? window.devicePixelRatio
+  : 1
+)
 
 export const setupCanvas2D = options => {
   const {canvas, width, height, scaleRatio=DEVICE_PIXEL_RATIO} = options
@@ -32,12 +37,27 @@ export const setupCartesianCanvas = options => {
   return context
 }
 
+// Returns the normalized rectangular coordinates for an event,
+// relative to its target.
+export const readEventCoords = event => {
+  const rect = event.target.getBoundingClientRect()
+  const left = rect.left + window.scrollX
+  const top = rect.top + window.scrollY
+  const x = event.clientX - left + window.scrollX
+  const y = event.clientY - top + window.scrollY
+  return [x, y]
+}
+
 // Read a mouse or other event with client rect coords as cartesian
 // coords.
-export const readEventCartesian = (event, {canvas, scaleRatio}) => [
-  event.clientX - ((canvas.width / scaleRatio) / 2),
-  (event.clientY - ((canvas.height / scaleRatio) / 2))
-]
+export const readEventCartesian = (event, {canvas, scaleRatio}) => {
+  const scaleFactor = (1 / scaleRatio)
+  const [x, y] = readEventCoords(event)
+  return [
+    x - ((canvas.width * scaleFactor) / 2),
+    y - ((canvas.height * scaleFactor) / 2)
+  ]
+}
 
 const IMG_EVENT_OPTIONS = {once: true, capture: false}
 

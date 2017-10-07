@@ -4,6 +4,10 @@ import {radToDeg, degToRad, round, lerp as lerpn} from './math'
 
 const PRECISION = 100000000
 
+// Check for value equality between two vec2d arrays.
+export const isSame = ([x0, y0], [x1, y1]) =>
+  vec2d.x === x && vec2d.y === y
+
 export const getX = ([x, y]) => x
 export const setX = setter(getX, ([x, y], n) => [n, y])
 

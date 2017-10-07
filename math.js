@@ -2,6 +2,8 @@ export const TWO_PI = 2 * Math.PI
 export {TWO_PI as TAU}
 export const HALF_PI = Math.PI / 2
 export const QUARTER_PI = Math.PI / 4
+export const RAD_TO_DEG = 180 / Math.PI
+export const DEG_TO_RAD = Math.PI / 180
 
 export const clamp = (n, min, max) => Math.min(Math.max(n, min), max)
 export const ratio = (n, begin, end) => n / (end - begin)
@@ -28,10 +30,10 @@ export const lerp = (a, b, scalar) => ((b - a) * scalar) + a
 export const degrees = n => (360 + n) % 360
 
 // Convert radians to degrees
-export const radToDeg = rad => rad * (180 / Math.PI)
+export const radToDeg = rad => rad * RAD_TO_DEG
 
 // Convert degrees to radians
-export const degToRad = deg => degrees(deg) * (Math.PI / 180)
+export const degToRad = deg => degrees(deg) * DEG_TO_RAD
 
 // Round to nearest x.
 // Factor is typically a multiple of 10.

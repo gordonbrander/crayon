@@ -6,7 +6,7 @@ const PRECISION = 100000000
 
 // Check for value equality between two vec2d arrays.
 export const isSame = ([x0, y0], [x1, y1]) =>
-  vec2d.x === x && vec2d.y === y
+  x0 === x1 && y0 === y1
 
 export const getX = ([x, y]) => x
 export const setX = setter(getX, ([x, y], n) => [n, y])
@@ -66,7 +66,9 @@ export const rot = (v, deg) => {
   ]
 }
 
-// Rotate a vector around a circle.
+// Calculate a point along a circle
+// `radius` defines the circle.
+// `deg` defines the angle of rotation in degrees.
 export const circ = ([cx, cy], radius, deg) => {
   const rad = degToRad(deg)
   return [
@@ -74,6 +76,10 @@ export const circ = ([cx, cy], radius, deg) => {
     round(cy + radius * Math.sin(rad), PRECISION)
   ]
 }
+
+// Calculate the slope of a line between two points.
+// https://math.stackexchange.com/questions/707673/find-angle-in-degrees-from-one-point-to-another-in-2d-space
+export const slope = ([x0, y0], [x1, y1]) => (y1 - y0) / (x1 - x0)
 
 // Generate an array of `length` random vectors between `min` and `max`.
 export const nrandom = (length, min=0, max=1) =>

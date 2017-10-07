@@ -6,81 +6,110 @@ export const MITER = 'miter'
 export const BUTT = 'butt'
 export const SQUARE = 'square'
 
-export const stroke = (ctx, strokeColor, strokeWidth=1, dashOffset=0, cap='butt', join='miter') => {
-  ctx.strokeStyle = strokeColor
-  ctx.lineWidth = strokeWidth
-  ctx.lineDashOffset = dashOffset
-  ctx.lineJoin = join
+export const stroke = (context, strokeColor, strokeWidth=1, cap='butt', join='miter') => {
+  context.strokeStyle = strokeColor
+  context.lineWidth = strokeWidth
+  context.lineCap = cap
+  context.lineJoin = join
+  context.stroke()
 }
 
-export const fill = (ctx, fillColor) => {
-  if (fillColor !== 'transparent') {
-    ctx.fillStyle = fillColor
-  }
+export const dashStroke = (context, segments, dashOffset=0, strokeColor, strokeWidth=1, cap='butt', join='miter') => {
+  context.strokeStyle = strokeColor
+  context.lineWidth = strokeWidth
+  context.lineCap = cap
+  context.lineJoin = join
+  context.setLineDash(segments)
+  context.lineDashOffset = dashOffset
+  context.stroke()
 }
 
-export const shadow = (ctx, offsetX, offsetY, blur=5, shadowColor='black') => {
-  ctx.shadowColor = shadowColor
-  ctx.shadowOffsetX = offsetX
-  ctx.shadowOffsetY = offsetY
-  ctx.shadowBlur = blur
+export const fill = (context, fillColor) => {
+  context.fillStyle = fillColor
+  context.fill()
 }
 
-export const style = (ctx, hasFill, hasStroke) => {
-  if (hasFill) {
-    ctx.fill()
-  }
-  if (hasStroke) {
-    ctx.stroke()
-  }
+export const ellipse = (context, x, y, radiusX, radiusY) => {
+  context.beginPath()
+  context.ellipse(x, y, radiusX, radiusY, 0, 0, TWO_PI)
 }
 
-export const rect = (ctx, x, y, width, height, hasFill=true, hasStroke=false) => {
+export const triangle = (context, x0, y0, x1, y1, x2, y2) => {
+  context.beginPath()
+  context.moveTo(x0, y0)
+  context.lineTo(x1, y1)
+  context.lineTo(x2, y2)
+  context.closePath()
+}
+
+export const quad = (context, x0, y0, x1, y1, x2, y2, x3, y3) => {
+  context.beginPath()
+  context.moveTo(x0, y0)
+  context.lineTo(x1, y1)
+  context.lineTo(x2, y2)
+  context.lineTo(x3, y3)
+  context.closePath()
+}
+
+export const rect = (context, x, y, width, height) => {
   // Draw rect from center, not top left
-  ctx.rect(x - (width / 2), y - (height / 2), width, height)
-  style(ctx, hasFill, hasStroke)
+  context.beginPath()
+  context.rect(x - (width / 2), y - (height / 2), width, height)
 }
 
-export const ellipse = (ctx, x, y, radiusX, radiusY, hasFill=true, hasStroke=false) => {
-  ctx.beginPath()
-  ctx.ellipse(x, y, radiusX, radiusY, 0, 0, TWO_PI)
-  style(ctx, hasFill, hasStroke)
+export const fivegon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
+  context.beginPath()
+  context.moveTo(x0, y0)
+  context.lineTo(x1, y1)
+  context.lineTo(x2, y2)
+  context.lineTo(x3, y3)
+  context.lineTo(x4, y4)
+  context.closePath()
 }
 
-export const triangle = (ctx, x0, y0, x1, y1, x2, y2, hasFill=true, hasStroke=false) => {
-  ctx.beginPath()
-  ctx.moveTo(x0, y0)
-  ctx.lineTo(x1, y1)
-  ctx.lineTo(x2, y2)
-  ctx.closePath()
-  style(ctx, hasFill, hasStroke)
+export const sixgon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5) => {
+  context.beginPath()
+  context.moveTo(x0, y0)
+  context.lineTo(x1, y1)
+  context.lineTo(x2, y2)
+  context.lineTo(x3, y3)
+  context.lineTo(x4, y4)
+  context.lineTo(x5, y5)
+  context.closePath()
 }
 
-export const quad = (ctx, x0, y0, x1, y1, x2, y2, x3, y3, hasFill=true, hasStroke=false) => {
-  ctx.beginPath()
-  ctx.moveTo(x0, y0)
-  ctx.lineTo(x1, y1)
-  ctx.lineTo(x2, y2)
-  ctx.lineTo(x3, y3)
-  ctx.closePath()
-  style(ctx, hasFill, hasStroke)
+export const line = (context, x0, y0, x1, y1) => {
+  context.beginPath()
+  context.moveTo(x0, y0)
+  context.lineTo(x1, y1)
 }
 
-export const line = (ctx, x0, y0, x1, y1, hasStroke=true) => {
-  ctx.beginPath()
-  ctx.moveTo(x0, y0)
-  ctx.lineTo(x1, y1)
-  style(ctx, false, hasStroke)
+export const bezier = (context, cpx0, cpy0, cpx1, cpy1, x0, y0, x1, y1, isClosed=false) => {
+  context.beginPath()
+  context.moveTo(x0, y0)
+  context.bezierCurveTo(cpx0, cpy0, cpx1, cpy1, x1, y1)
+  if (isClosed) {
+    context.closePath()
+  }
 }
 
-export const arc = (ctx, x, y, radius, startAngle, endAngle, anticlockwise, hasStroke=true) => {
-  ctx.beginPath()
-  ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise)
-  style(ctx, false, hasStroke)
+export const arc = (context, x, y, radius, startAngle, endAngle, anticlockwise, isClosed=false) => {
+  context.beginPath()
+  context.arc(x, y, radius, startAngle, endAngle, anticlockwise)
+  if (isClosed) {
+    context.closePath()
+  }
 }
 
-export const clear = (ctx, x, y, width, height) => {
-  ctx.clearRect(x - (width / 2), y - (height / 2), width, height)
+export const clear = (context, x, y, width, height) => {
+  context.clearRect(x - (width / 2), y - (height / 2), width, height)
+}
+
+export const image = (context, img, x, y) => {
+  const width = img.naturalWidth
+  const height = img.naturalHeight
+  // Draw rect from center, not top left
+  context.drawImage(img, x - (width / 2), y - (height / 2))
 }
 
 // Convert to cartesian coords so that origin (0, 0) is at center.
@@ -88,8 +117,8 @@ export const clear = (ctx, x, y, width, height) => {
 // Additionally, you can provide a scalingFactor to compensate for
 // retina displays.
 // See https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setTransform.
-export const transformCartesian = (ctx, width, height, scalingFactor) => {
-  ctx.setTransform(
+export const transformCartesian = (context, width, height, scalingFactor) => {
+  context.setTransform(
     1 * scalingFactor,
     0,
     0,

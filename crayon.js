@@ -1,6 +1,7 @@
 import * as draw from './draw'
 import * as shape from './shape'
 import * as utils from './utils'
+import * as math from './math'
 import * as dom from './dom'
 import * as color from './color'
 import * as hsla from './hsla'
@@ -12,6 +13,7 @@ export {
   draw,
   shape,
   utils,
+  math,
   dom,
   color,
   rgba,

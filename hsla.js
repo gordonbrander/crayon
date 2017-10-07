@@ -1,4 +1,5 @@
-import {clamp, scale, cursor, setter, lerp as lerpn} from './utils'
+import {cursor, setter} from './utils'
+import {clamp, mult, lerp as lerpn} from './math'
 
 // Create an hsla color object.
 // Validates inputs and makes sure the result is a valid color.
@@ -24,7 +25,7 @@ export const setH = setter(getH, ({s, l, a}, h) => hsla(h, s, l, a))
 
 // Rotate hue along color wheel by `deg`.
 //
-//     scaleS(color, 0.4)
+//     rotateH(color, 0.4)
 //
 // Returns a new hsla color.
 export const rotateH = ({h, s, l, a}, deg) => hsla(h + deg, s, l, a)
@@ -38,15 +39,15 @@ export const setS = setter(getS, ({h, l, a}, s) => hsla(h, s, l, a))
 //     scaleS(color, 0.4)
 //
 // Returns a new hsla color.
-export const scaleS = cursor(getS, setS, scale)
+export const scaleS = cursor(getS, setS, mult)
 
 export const getL = hsla => hsla.l
 export const setL = setter(getL, ({h, s, a}, l) => hsla(h, s, l, a))
-export const scaleL = cursor(getL, setL, scale)
+export const scaleL = cursor(getL, setL, mult)
 
 export const getA = hsla => hsla.a
 export const setA = setter(getA, ({h, s, l}, a) => hsla(h, s, l, a))
-export const scaleA = cursor(getA, setA, scale)
+export const scaleA = cursor(getA, setA, mult)
 
 export const greyscale = ({h, s, l, a}) => hsla(0, 0, l, a)
 

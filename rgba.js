@@ -5,7 +5,7 @@ Note that because hsla is much easier to work with, all the color tools
 are in the hsla library. You typically want to convert rgba values to
 hsla to do things like shift hue, lighten, etc.
 */
-import {rescale, clamp} from './utils'
+import {rescale, clamp} from './math'
 
 // Rescale a number in range 0..1 to a number in range 0..255
 // Scaled number is clamped (can't go beyond range).

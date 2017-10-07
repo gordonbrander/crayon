@@ -1,5 +1,6 @@
 /* Simple 2D vector math with arrays. Just the basics. */
-import {radToDeg, degToRad, round, setter, lerp as lerpn} from './utils'
+import {setter} from './utils'
+import {radToDeg, degToRad, round, lerp as lerpn} from './math'
 
 const PRECISION = 100000000
 

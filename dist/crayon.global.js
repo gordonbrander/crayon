@@ -1,10 +1,6 @@
 var CRAY = (function (exports) {
 'use strict';
 
-const TWO_PI = 2 * Math.PI;
-const HALF_PI = Math.PI / 2;
-const QUARTER_PI = Math.PI / 4;
-
 const DEVICE_PIXEL_RATIO = (
     'devicePixelRatio' in window
   ? window.devicePixelRatio
@@ -42,40 +38,6 @@ const setter = (get, set) => (outer, value) =>
 const cursor = (get, set, update) => (outer, value) =>
   set(outer, update(get(outer), value));
 
-const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
-const ratio = (n, begin, end) => n / (end - begin);
-
-// Multiply a number. It's useful to have a functional form of this operation
-// for cursors and stuff.
-const scale = (n, x) => n * x;
-
-// Re-scale a number — project it from one scale to another.
-// `isBounded` will constraint the result to the range.
-const rescale = (n0, a0, b0, a1, b1, isBounded=false) => {
-  const n1 = (b1 - a1) * ratio(n0, a0, b0);
-  return isBounded ? clamp(n1, a1, b1) : n1
-};
-
-const fmod = (float, n) => {
-  const int = Math.floor(float);
-  return int % n + float - int
-};
-
-const lerp = (a, b, scalar) => ((b - a) * scalar) + a;
-
-// Clamp a 360 degree value. Negative degrees rotate the other direction.
-const degrees = n => (360 + n) % 360;
-
-// Convert radians to degrees
-const radToDeg = rad => rad * (180 / Math.PI);
-
-// Convert degrees to radians
-const degToRad = deg => degrees(deg) * (Math.PI / 180);
-
-// Round to nearest x.
-// Factor is typically a multiple of 10.
-const round = (n, factor=1) => Math.round(n * factor) / factor;
-
 const rangef$1 = (f, begin, end, step=1, extra) => {
   const numbers = [];
   // Make sure step is a positive number.
@@ -111,10 +73,6 @@ const nrandom = (length, min=0, max=1) =>
   rangef$1(0, length, () => random$1(min, max));
 
 var utils = Object.freeze({
-	TWO_PI: TWO_PI,
-	TAU: TWO_PI,
-	HALF_PI: HALF_PI,
-	QUARTER_PI: QUARTER_PI,
 	DEVICE_PIXEL_RATIO: DEVICE_PIXEL_RATIO,
 	copy: copy,
 	merge: merge,
@@ -122,22 +80,67 @@ var utils = Object.freeze({
 	id: id,
 	setter: setter,
 	cursor: cursor,
-	clamp: clamp,
-	ratio: ratio,
-	scale: scale,
-	rescale: rescale,
-	fmod: fmod,
-	lerp: lerp,
-	degrees: degrees,
-	radToDeg: radToDeg,
-	degToRad: degToRad,
-	round: round,
 	rangef: rangef$1,
 	range: range,
 	random: random$1,
 	randomInt: randomInt,
 	choice: choice,
 	nrandom: nrandom
+});
+
+const TWO_PI = 2 * Math.PI;
+const HALF_PI = Math.PI / 2;
+const QUARTER_PI = Math.PI / 4;
+
+const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+const ratio = (n, begin, end) => n / (end - begin);
+
+// Multiply a number. It's useful to have a functional form of this operation
+// for cursors and stuff.
+const mult = (n, x) => n * x;
+
+// Re-scale a number — project it from one scale to another.
+// `isBounded` will constraint the result to the range.
+const rescale = (n0, a0, b0, a1, b1, isBounded=false) => {
+  const n1 = (b1 - a1) * ratio(n0, a0, b0);
+  return isBounded ? clamp(n1, a1, b1) : n1
+};
+
+const fmod = (float, n) => {
+  const int = Math.floor(float);
+  return int % n + float - int
+};
+
+const lerp = (a, b, scalar) => ((b - a) * scalar) + a;
+
+// Clamp a 360 degree value. Negative degrees rotate the other direction.
+const degrees = n => (360 + n) % 360;
+
+// Convert radians to degrees
+const radToDeg = rad => rad * (180 / Math.PI);
+
+// Convert degrees to radians
+const degToRad = deg => degrees(deg) * (Math.PI / 180);
+
+// Round to nearest x.
+// Factor is typically a multiple of 10.
+const round = (n, factor=1) => Math.round(n * factor) / factor;
+
+var math = Object.freeze({
+	TWO_PI: TWO_PI,
+	TAU: TWO_PI,
+	HALF_PI: HALF_PI,
+	QUARTER_PI: QUARTER_PI,
+	clamp: clamp,
+	ratio: ratio,
+	mult: mult,
+	rescale: rescale,
+	fmod: fmod,
+	lerp: lerp,
+	degrees: degrees,
+	radToDeg: radToDeg,
+	degToRad: degToRad,
+	round: round
 });
 
 const ROUND = 'round';
@@ -308,9 +311,9 @@ const setXY = (vec2d, x, y) => (
 
 const add = ([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1];
 const sub = ([x0, y0], [x1, y1]) => [x0 - x1, y0 - y1];
-const mult = ([x, y], scalar) => [x * scalar, y * scalar];
+const mult$1 = ([x, y], scalar) => [x * scalar, y * scalar];
 // Return the inverse of a vector
-const inv = v => mult(v, -1);
+const inv = v => mult$1(v, -1);
 const multX = ([x, y], scalar) => [x * scalar, y];
 const multY = ([x, y], scalar) => [x, y * scalar];
 const div = ([x, y], scalar) => [x / scalar, y / scalar];
@@ -375,7 +378,7 @@ var vec2d = Object.freeze({
 	setXY: setXY,
 	add: add,
 	sub: sub,
-	mult: mult,
+	mult: mult$1,
 	inv: inv,
 	multX: multX,
 	multY: multY,
@@ -417,7 +420,7 @@ const setH = setter(getH, ({s, l, a}, h) => hsla(h, s, l, a));
 
 // Rotate hue along color wheel by `deg`.
 //
-//     scaleS(color, 0.4)
+//     rotateH(color, 0.4)
 //
 // Returns a new hsla color.
 const rotateH = ({h, s, l, a}, deg) => hsla(h + deg, s, l, a);
@@ -431,15 +434,15 @@ const setS = setter(getS, ({h, l, a}, s) => hsla(h, s, l, a));
 //     scaleS(color, 0.4)
 //
 // Returns a new hsla color.
-const scaleS = cursor(getS, setS, scale);
+const scaleS = cursor(getS, setS, mult);
 
 const getL = hsla => hsla.l;
 const setL = setter(getL, ({h, s, a}, l) => hsla(h, s, l, a));
-const scaleL = cursor(getL, setL, scale);
+const scaleL = cursor(getL, setL, mult);
 
 const getA$1 = hsla => hsla.a;
 const setA = setter(getA$1, ({h, s, l}, a) => hsla(h, s, l, a));
-const scaleA = cursor(getA$1, setA, scale);
+const scaleA = cursor(getA$1, setA, mult);
 
 const greyscale = ({h, s, l, a}) => hsla(0, 0, l, a);
 
@@ -888,6 +891,7 @@ var shape = Object.freeze({
 
 const setupCanvas2D = options => {
   const {canvas, width, height, scaleRatio=DEVICE_PIXEL_RATIO} = options;
+  const {smooth=true} = options;
   const canvasWidth = width * scaleRatio;
   const canvasHeight = height * scaleRatio;
   canvas.width = canvasWidth;
@@ -895,6 +899,7 @@ const setupCanvas2D = options => {
   canvas.style.width = width + 'px';
   canvas.style.height = height + 'px';
   const context = canvas.getContext('2d');
+  context.imageSmoothingEnabled = smooth;
   // Assign scaleRatio to context so we have it for calculations later.
   context.scaleRatio = scaleRatio;
   return context
@@ -1017,6 +1022,7 @@ var sketch = Object.freeze({
 exports.draw = draw;
 exports.shape = shape;
 exports.utils = utils;
+exports.math = math;
 exports.dom = dom;
 exports.color = color;
 exports.rgba = rgba$1;

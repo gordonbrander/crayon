@@ -1,4 +1,5 @@
-import {DEVICE_PIXEL_RATIO, TWO_PI} from './utils'
+import {DEVICE_PIXEL_RATIO} from './utils'
+import {TWO_PI} from './math'
 
 export const ROUND = 'round'
 export const BEVEL = 'bevel'

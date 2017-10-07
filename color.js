@@ -5,7 +5,7 @@ https://developer.mozilla.org/en-US/docs/Web/CSS/color_value
 hslaToRgba and rgba2Hsla are based on
 https://github.com/Gozala/color.flow/blob/master/src/Color.js
 */
-import {fmod, degToRad} from './utils'
+import {fmod, degToRad} from './math'
 import * as hsla from './hsla'
 import * as rgba from './rgba'
 

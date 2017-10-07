@@ -1,4 +1,4 @@
-import {DEVICE_PIXEL_RATIO} from './utils'
+import {DEVICE_PIXEL_RATIO} from './dom'
 import {TWO_PI} from './math'
 
 export const ROUND = 'round'

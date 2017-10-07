@@ -1,9 +1,3 @@
-export const DEVICE_PIXEL_RATIO = (
-    'devicePixelRatio' in window
-  ? window.devicePixelRatio
-  : 1
-)
-
 export const copy = o => Object.assign({}, o)
 
 // Merge 2 objects together, creating a new object.
@@ -12,8 +6,8 @@ export const merge = (a, b) => Object.assign({}, a, b)
 
 const _set = (o, k, v) => {
   const copy = Object.assign({}, o)
-  o[k] = v
-  return o
+  copy[k] = v
+  return copy
 }
 
 // Set value of a field on an object.
@@ -35,17 +29,17 @@ export const setter = (get, set) => (outer, value) =>
 export const cursor = (get, set, update) => (outer, value) =>
   set(outer, update(get(outer), value))
 
-export const rangef = (f, begin, end, step=1, extra) => {
+export const rangef = (f, begin, end, step=1) => {
   const numbers = []
   // Make sure step is a positive number.
   step = Math.abs(step)
   if (begin < end) {
     for (let i = begin; i <= end; i = i + step) {
-      numbers.push(f(i, extra))
+      numbers.push(f(i))
     }
   } else {
     for (let i = begin; i >= end; i = i - step) {
-      numbers.push(f(i, extra))
+      numbers.push(f(i))
     }
   }
   return numbers

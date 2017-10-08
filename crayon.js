@@ -7,6 +7,7 @@ import * as color from './color'
 import * as hsla from './hsla'
 import * as rgba from './rgba'
 import * as vec2d from './vec2d'
+import * as grid from './grid'
 import * as sketch from './sketch'
 
 export {
@@ -19,5 +20,6 @@ export {
   rgba,
   hsla,
   vec2d,
+  grid,
   sketch
 }

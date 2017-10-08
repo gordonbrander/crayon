@@ -34,6 +34,11 @@ export const bpoint = (pos, ctl) => ({
   pos, ctl
 })
 
+export const ellipse = (pos, raidus, fill=TRANSPARENT, stroke=TRANSPARENT, strokeWidth=1) => ({
+  type: 'ellipse',
+  pos, radius, fill, stroke, strokeWidth
+})
+
 export const triangle = (pos0, pos1, pos2, fill=TRANSPARENT, stroke=TRANSPARENT, strokeWidth=1) => ({
   type: 'triangle',
   pos0, pos1, pos2, fill, stroke, strokeWidth
@@ -47,39 +52,6 @@ export const eqtri = (pos, radius, fill, stroke, strokeWidth) => triangle(
   circ(pos, radius, -120),
   fill, stroke, strokeWidth
 )
-
-// TODO move to vec2d
-export const gridPos = (n, width, height, cols, rows, origin=ORIGIN) => {
-  n = Math.max(n, 1)
-  cols = Math.max(1, cols)
-  rows = Math.max(1, rows)
-  width = Math.abs(width)
-  height = Math.abs(height)
-  const [ox, oy] = origin
-  const uw = width / cols
-  const uh = height / rows
-  const ncol = n % cols
-  const nrow = Math.ceil(n / cols)
-
-  return [
-    ((ncol * uw) + (uw / 2)) - (width / 2) + ox,
-    ((nrow * uh) - (uh / 2)) - (height / 2) - oy
-  ]
-}
-
-// TODO
-// export const snapToGrid = (pos, width, height, cols, rows) => {}
-
-// Given a shape, arrange copies of that shape along a grid.
-// Each shape is drawn at the intersection of two lines on the grid.
-// Returns an array of shapes.
-export const grid = (shape, width, height, cols, rows, origin=ORIGIN) => {
-  const f = n => {
-    const pos = gridPos(n, width, height, cols, rows, origin)
-    return setPos(shape, pos)
-  }
-  return utils.rangef(f, 1, cols * rows)
-}
 
 const wrapTransform = render => (context, shape) => {
   const {scaleRatio=1, canvas: {width, height}} = context

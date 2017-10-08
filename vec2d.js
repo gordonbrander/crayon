@@ -67,13 +67,14 @@ export const rot = (v, deg) => {
 }
 
 // Calculate a point along a circle
+// `[x, y]` defines the origin of the circle.
 // `radius` defines the circle.
 // `deg` defines the angle of rotation in degrees.
-export const circ = ([cx, cy], radius, deg) => {
+export const circ = ([x, y], radius, deg) => {
   const rad = degToRad(deg)
   return [
-    round(cx + radius * Math.cos(rad), PRECISION),
-    round(cy + radius * Math.sin(rad), PRECISION)
+    round(x + radius * Math.cos(rad), PRECISION),
+    round(y + radius * Math.sin(rad), PRECISION)
   ]
 }
 

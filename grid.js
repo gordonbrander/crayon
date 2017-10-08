@@ -1,5 +1,7 @@
 import {rangef} from './utils'
 
+const ORIGIN = Object.freeze([0 , 0])
+
 export const gridPos = (n, width, height, cols, rows, origin=ORIGIN) => {
   n = Math.max(n, 1)
   cols = Math.max(1, cols)

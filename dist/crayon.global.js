@@ -7,90 +7,89 @@ const DEVICE_PIXEL_RATIO = (
   : 1
 );
 
-const copy = o => Object.assign({}, o);
-
-// Merge 2 objects together, creating a new object.
-// Properties of `b` win any collision.
-const merge = (a, b) => Object.assign({}, a, b);
-
-const _set = (o, k, v) => {
-  const copy = Object.assign({}, o);
-  o[k] = v;
-  return o
+const setupCanvas2D = options => {
+  const {canvas, width, height, scaleRatio=DEVICE_PIXEL_RATIO} = options;
+  const {smooth=true} = options;
+  const canvasWidth = width * scaleRatio;
+  const canvasHeight = height * scaleRatio;
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  const context = canvas.getContext('2d');
+  context.imageSmoothingEnabled = smooth;
+  // Assign scaleRatio to context so we have it for calculations later.
+  context.scaleRatio = scaleRatio;
+  return context
 };
 
-// Set value of a field on an object.
-// This function is copy-on-write. It only returns new object if value
-// has actually changed.
-const set$1 = (o, k, v) => o[k] !== v ? _set(o, k, v) : o;
-
-const id = x => x;
-
-// Create a setter function that will only invoke `set` if new
-// `value` is different from old value as read by `get`.
-// This can be used to create setters for specific fields, or
-// even a setter for fields deep within a structure.
-const setter = (get, set) => (outer, value) =>
-  get(outer) === value ? outer : set(outer, value);
-
-// Create a function that can get and set a property within a data structure,
-// returning a new version of that data structure if the property has changed.
-const cursor = (get, set, update) => (outer, value) =>
-  set(outer, update(get(outer), value));
-
-const rangef$1 = (f, begin, end, step=1, extra) => {
-  const numbers = [];
-  // Make sure step is a positive number.
-  step = Math.abs(step);
-  if (begin < end) {
-    for (let i = begin; i <= end; i = i + step) {
-      numbers.push(f(i, extra));
-    }
-  } else {
-    for (let i = begin; i >= end; i = i - step) {
-      numbers.push(f(i, extra));
-    }
-  }
-  return numbers
+// Given a set of options, configures a canvas element
+// for 2D cartesian space.
+// Returns a context object containing canvas 2D context
+const setupCartesianCanvas = options => {
+  const context = setupCanvas2D(options);
+  // Transform canvas coords to make them cartesian
+  transformCartesian(
+    context,
+    context.canvas.width,
+    context.canvas.height,
+    context.scaleRatio
+  );
+  return context
 };
 
-// Generate a list of numbers, from `begin` to `end`, counting by `step`.
-// `begin` and `end` are inclusive.
-const range = (begin, end, step=1) => rangef$1(id, begin, end, step);
+// Returns the normalized rectangular coordinates for an event,
+// relative to its target.
+const readEventCoords = event => {
+  const rect$$1 = event.target.getBoundingClientRect();
+  const left = rect$$1.left + window.scrollX;
+  const top = rect$$1.top + window.scrollY;
+  const x = event.clientX - left + window.scrollX;
+  const y = event.clientY - top + window.scrollY;
+  return [x, y]
+};
 
-// Generate a pseudo-random number between range `min` and `max`.
-const random$1 = (min=0, max=1) => Math.random() * (max - min) + min;
+// Read a mouse or other event with client rect coords as cartesian
+// coords.
+const readEventCartesian = (event, {canvas, scaleRatio}) => {
+  const scaleFactor = (1 / scaleRatio);
+  const [x, y] = readEventCoords(event);
+  return [
+    x - ((canvas.width * scaleFactor) / 2),
+    y - ((canvas.height * scaleFactor) / 2)
+  ]
+};
 
-// Generate a pseudo-random integer between range `min` and `max`.
-const randomInt = (min=0, max=1) => Math.floor(random$1(min, max));
+const IMG_EVENT_OPTIONS = {once: true, capture: false};
 
-// Choose a random element from an array
-const choice = array =>
-  array.length > 0 ? array[randomIntBetween(0, array.length)] : null;
+// Load an image from a given `src`.
+// Returns a promise for the image.
+const loadImage = src => {
+  return new Promise((resolve, reject) => {
+    var img = new Image(); // Create new img element
+    img.addEventListener('load', e => resolve(img), IMG_EVENT_OPTIONS);
+    // Set source path
+    img.src = 'myImage.png';
+  })
+};
 
-// Generate an array of `length` random numbers.
-const nrandom = (length, min=0, max=1) =>
-  rangef$1(0, length, () => random$1(min, max));
+const loadImages$1 = (srcs) => Promise.all(srcs.map(loadImage));
 
-var utils = Object.freeze({
+var dom = Object.freeze({
 	DEVICE_PIXEL_RATIO: DEVICE_PIXEL_RATIO,
-	copy: copy,
-	merge: merge,
-	set: set$1,
-	id: id,
-	setter: setter,
-	cursor: cursor,
-	rangef: rangef$1,
-	range: range,
-	random: random$1,
-	randomInt: randomInt,
-	choice: choice,
-	nrandom: nrandom
+	setupCanvas2D: setupCanvas2D,
+	setupCartesianCanvas: setupCartesianCanvas,
+	readEventCoords: readEventCoords,
+	readEventCartesian: readEventCartesian,
+	loadImage: loadImage,
+	loadImages: loadImages$1
 });
 
 const TWO_PI = 2 * Math.PI;
 const HALF_PI = Math.PI / 2;
 const QUARTER_PI = Math.PI / 4;
+const RAD_TO_DEG = 180 / Math.PI;
+const DEG_TO_RAD = Math.PI / 180;
 
 const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
 const ratio = (n, begin, end) => n / (end - begin);
@@ -117,10 +116,10 @@ const lerp = (a, b, scalar) => ((b - a) * scalar) + a;
 const degrees = n => (360 + n) % 360;
 
 // Convert radians to degrees
-const radToDeg = rad => rad * (180 / Math.PI);
+const radToDeg = rad => rad * RAD_TO_DEG;
 
 // Convert degrees to radians
-const degToRad = deg => degrees(deg) * (Math.PI / 180);
+const degToRad = deg => degrees(deg) * DEG_TO_RAD;
 
 // Round to nearest x.
 // Factor is typically a multiple of 10.
@@ -131,6 +130,8 @@ var math = Object.freeze({
 	TAU: TWO_PI,
 	HALF_PI: HALF_PI,
 	QUARTER_PI: QUARTER_PI,
+	RAD_TO_DEG: RAD_TO_DEG,
+	DEG_TO_RAD: DEG_TO_RAD,
 	clamp: clamp,
 	ratio: ratio,
 	mult: mult,
@@ -177,7 +178,7 @@ const ellipse = (context, x, y, radiusX, radiusY) => {
   context.ellipse(x, y, radiusX, radiusY, 0, 0, TWO_PI);
 };
 
-const triangle = (context, x0, y0, x1, y1, x2, y2) => {
+const triangle$1 = (context, x0, y0, x1, y1, x2, y2) => {
   context.beginPath();
   context.moveTo(x0, y0);
   context.lineTo(x1, y1);
@@ -200,7 +201,7 @@ const rect = (context, x, y, width, height) => {
   context.rect(x - (width / 2), y - (height / 2), width, height);
 };
 
-const fivegon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
+const pentagon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
   context.beginPath();
   context.moveTo(x0, y0);
   context.lineTo(x1, y1);
@@ -210,7 +211,7 @@ const fivegon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
   context.closePath();
 };
 
-const sixgon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5) => {
+const hexagon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5) => {
   context.beginPath();
   context.moveTo(x0, y0);
   context.lineTo(x1, y1);
@@ -257,15 +258,15 @@ const image = (context, img, x, y) => {
 
 // Convert to cartesian coords so that origin (0, 0) is at center.
 // An elegant coordinate system for a more civilized age.
-// Additionally, you can provide a scalingFactor to compensate for
+// Additionally, you can provide a scaleRatio to compensate for
 // retina displays.
 // See https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setTransform.
-const transformCartesian = (context, width, height, scalingFactor) => {
+const transformCartesian = (context, width, height, scaleRatio) => {
   context.setTransform(
-    1 * scalingFactor,
+    1 * scaleRatio,
     0,
     0,
-    -1 * scalingFactor,
+    -1 * scaleRatio,
     (width / 2),
     (height / 2)
   );
@@ -281,11 +282,11 @@ var draw = Object.freeze({
 	dashStroke: dashStroke,
 	fill: fill,
 	ellipse: ellipse,
-	triangle: triangle,
+	triangle: triangle$1,
 	quad: quad,
 	rect: rect,
-	fivegon: fivegon,
-	sixgon: sixgon,
+	pentagon: pentagon,
+	hexagon: hexagon,
 	line: line,
 	bezier: bezier,
 	arc: arc,
@@ -294,8 +295,105 @@ var draw = Object.freeze({
 	transformCartesian: transformCartesian
 });
 
+const copy = o => Object.assign({}, o);
+
+// Merge 2 objects together, creating a new object.
+// Properties of `b` win any collision.
+// This is a copy-on-write operation. If `b` would make no change,
+// `a` is returned unchanged.
+const merge = (a, b) => {
+  for (let k in b) {
+    // Check if this key actually belongs to b and is not in prototype
+    // chain.
+    // If b value is different from a value, return updated copy.
+    if (b.hasOwnProperty(k) && a[k] !== b[k]) {
+      return Object.assign({}, a, b)
+    }
+  }
+  return a
+};
+
+const _set = (o, k, v) => {
+  const c = copy(o);
+  c[k] = v;
+  return c
+};
+
+// Set value of a field on an object.
+// This function is copy-on-write. It only returns new object if value
+// has actually changed.
+const set = (o, k, v) => o[k] !== v ? _set(o, k, v) : o;
+
+const id = x => x;
+
+// Create a setter function that will only invoke `set` if new
+// `value` is different from old value as determined by `shouldUpdate`.
+const setter = (get, set) => (o, v) =>
+  get(o) !== v ? set(o, v) : o;
+
+// Create a function that can get and set a property within a data structure,
+// returning a new version of that data structure if the property has changed.
+const cursor = (get, set, update=swap) => (outer, value) =>
+  set(outer, update(get(outer), value));
+
+const lens = (get, set) => (update) => cursor(get, set, update);
+
+const rangef$1 = (f, begin, end, step=1) => {
+  const numbers = [];
+  // Make sure step is a positive number.
+  step = Math.abs(step);
+  if (begin < end) {
+    for (let i = begin; i <= end; i = i + step) {
+      numbers.push(f(i));
+    }
+  } else {
+    for (let i = begin; i >= end; i = i - step) {
+      numbers.push(f(i));
+    }
+  }
+  return numbers
+};
+
+// Generate a list of numbers, from `begin` to `end`, counting by `step`.
+// `begin` and `end` are inclusive.
+const range = (begin, end, step=1) => rangef$1(id, begin, end, step);
+
+// Generate a pseudo-random number between range `min` and `max`.
+const random$1 = (min=0, max=1) => Math.random() * (max - min) + min;
+
+// Generate a pseudo-random integer between range `min` and `max`.
+const randomInt = (min=0, max=1) => Math.floor(random$1(min, max));
+
+// Choose a random element from an array
+const choice = array =>
+  array.length > 0 ? array[randomIntBetween(0, array.length)] : null;
+
+// Generate an array of `length` random numbers.
+const nrandom$1 = (length, min=0, max=1) =>
+  rangef$1(() => random$1(min, max), 0, length);
+
+var utils = Object.freeze({
+	copy: copy,
+	merge: merge,
+	set: set,
+	id: id,
+	setter: setter,
+	cursor: cursor,
+	lens: lens,
+	rangef: rangef$1,
+	range: range,
+	random: random$1,
+	randomInt: randomInt,
+	choice: choice,
+	nrandom: nrandom$1
+});
+
 /* Simple 2D vector math with arrays. Just the basics. */
 const PRECISION = 100000000;
+
+// Check for value equality between two vec2d arrays.
+const isSame = ([x0, y0], [x1, y1]) =>
+  x0 === x1 && y0 === y1;
 
 const getX = ([x, y]) => x;
 const setX = setter(getX, ([x, y], n) => [n, y]);
@@ -303,15 +401,20 @@ const setX = setter(getX, ([x, y], n) => [n, y]);
 const getY = ([x, y]) => y;
 const setY = setter(getY, ([x, y], n) => [x, n]);
 
-const setXY = (vec2d, x, y) => (
-    vec2d.x === x && vec2d.y === y
-  ? vec2d
-  : [x, y]
-);
+// Update x and y fields in a vec2d.
+// Returns a new vector if this would actually change anything.
+const setXY = (v, x, y) => v.x !== x || v.y !== y ? [x, y] : v;
+
+// Mutate add
+const add_ = (v, [x1, y1]) => {
+  v[0] = v[0] + x1;
+  v[1] = v[1] + y1;
+};
 
 const add = ([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1];
 const sub = ([x0, y0], [x1, y1]) => [x0 - x1, y0 - y1];
 const mult$1 = ([x, y], scalar) => [x * scalar, y * scalar];
+const scale = mult$1;
 // Return the inverse of a vector
 const inv = v => mult$1(v, -1);
 const multX = ([x, y], scalar) => [x * scalar, y];
@@ -344,33 +447,47 @@ const norm = v => div(v, mag(v));
 
 const rotation = ([x, y]) => radToDeg(Math.atan2(y, x));
 
-// Rotate a vector by n
-const rot = (v, deg) => {
+// Calculate points along a circle.
+// `[x, y]` defines the origin of the circle.
+// `radius` defines the circle.
+// `deg` defines the angle of rotation in degrees.
+const circ = ([x, y], radius, deg) => {
   const rad = degToRad(deg);
-  const len = mag(v);
   return [
-    round(Math.cos(rad) * len, PRECISION),
-    round(Math.sin(rad) * len, PRECISION)
+    round(x + radius * Math.cos(rad), PRECISION),
+    round(y + radius * Math.sin(rad), PRECISION)
   ]
 };
 
-// Rotate a vector around a circle.
-const circ = ([cx, cy], radius, deg) => {
-  const rad = degToRad(deg);
-  return [
-    round(cx + radius * Math.cos(rad), PRECISION),
-    round(cy + radius * Math.sin(rad), PRECISION)
-  ]
-};
+// Calculate the centroid (center point) of a polygon
+// (as an array of array vec2d points).
+// Note this is the centerpoint by shape, not the centerpoint by mass.
+// https://en.wikipedia.org/wiki/Centroid#Centroid_of_polygon
+const centroid = points =>
+  mult$1(points.reduce(add_, [0, 0]), 1 / points.length);
+
+
+// Rotate an array of vec2d points along their center axis.
+// export const rotate = (points, deg) => {
+//   const c = centroid(points)
+//   // FIXME this isn't right because I need to figure out current angle
+//   // of rotation.
+//   return points.map(v => circ(c, dist(c, v), deg))
+// }
+
+// Calculate the slope of a line between two points.
+// https://math.stackexchange.com/questions/707673/find-angle-in-degrees-from-one-point-to-another-in-2d-space
+const slope = ([x0, y0], [x1, y1]) => (y1 - y0) / (x1 - x0);
 
 // Generate an array of `length` random vectors between `min` and `max`.
-const nrandom$1 = (length, min=0, max=1) =>
+const nrandom = (length, min=0, max=1) =>
   rangef(0, length, () => [random(min, max), random(min, max)]);
 
 // TODO boundingBox
 // TODO origin
 
 var vec2d = Object.freeze({
+	isSame: isSame,
 	getX: getX,
 	setX: setX,
 	getY: getY,
@@ -379,6 +496,7 @@ var vec2d = Object.freeze({
 	add: add,
 	sub: sub,
 	mult: mult$1,
+	scale: scale,
 	inv: inv,
 	multX: multX,
 	multY: multY,
@@ -391,16 +509,17 @@ var vec2d = Object.freeze({
 	dot: dot,
 	norm: norm,
 	rotation: rotation,
-	rot: rot,
 	circ: circ,
-	nrandom: nrandom$1
+	centroid: centroid,
+	slope: slope,
+	nrandom: nrandom
 });
 
 // Create an hsla color object.
 // Validates inputs and makes sure the result is a valid color.
 const hsla = (h=0, s=0, l=0, a=1) => ({
   type: 'hsla',
-  h: h % 360,
+  h: (h % 360) + 360,
   s: clamp(s, 0, 1),
   l: clamp(l, 0, 1),
   a: clamp(a, 0, 1)
@@ -668,27 +787,66 @@ SVG for that.
 const ORIGIN = Object.freeze([0 , 0]);
 const ACTUAL_SIZE = Object.freeze([1, 1]);
 
+const getPos = shape => shape.pos;
+const setPos = (shape, v) => set(shape, 'pos', v);
+
+const getSize = shape => shape.size;
+const setSize = (shape, v) => set(shape, 'size', v);
+
+// Define a bezier point.
+// `pos` defines the position of the point.
+// `ctl` defines the control point.
+const bpoint = (pos, ctl) => ({
+  type: 'bpoint',
+  pos, ctl
+});
+
+// Create an ellipse shape
+const Ellipse = (pos, raidus, fill$$1=TRANSPARENT, stroke$$1=TRANSPARENT, strokeWidth=1) => ({
+  type: 'ellipse',
+  pos, radius, fill: fill$$1, stroke: stroke$$1, strokeWidth
+});
+
+// Create a triangle shape
+const Triangle = (pos0, pos1, pos2, fill$$1=TRANSPARENT, stroke$$1=TRANSPARENT, strokeWidth=1) => ({
+  type: 'triangle',
+  pos0, pos1, pos2, fill: fill$$1, stroke: stroke$$1, strokeWidth
+});
+
+// Construct an equilateral triangle
+// Deshugars to an ordinary Triangle shape.
+const Eqtri = (pos, radius, fill$$1, stroke$$1, strokeWidth) => triangle(
+  circ(pos, radius, 0),
+  circ(pos, radius, 120),
+  circ(pos, radius, -120),
+  fill$$1, stroke$$1, strokeWidth
+);
+
+// Create a transform shape
+const Transform = (shape, translate=ORIGIN, scale$$1=ACTUAL_SIZE, rotate=0) => ({
+  type: 'transform',
+  translate,
+  scale: scale$$1,
+  rotate,
+  shape
+});
+
 const wrapTransform = render => (context, shape) => {
   const {scaleRatio=1, canvas: {width, height}} = context;
-  const {translate=ORIGIN, scale=ACTUAL_SIZE, skew=ORIGIN, rotate=0} = shape;
+  const {translate=ORIGIN, scale: scale$$1=ACTUAL_SIZE, rotate=0} = shape;
   const [translateX, translateY] = translate;
-  const [scaleX, scaleY] = scale;
-  const [skewX, skewY] = skew;
-  // context.save()
-  // Sets transform while retaining cartesian coords
-  context.setTransform(
-    scaleX * scaleRatio,
-    skewX,
-    skewY,
-    (scaleY * scaleRatio),
-    translateX + (width / 2),
-    translateY + (height / 2)
-  );
-  if (rotate > 0 || rotate < 0) {
-    context.rotate(rotate);
-  }
+  const [scaleX, scaleY] = scale$$1;
+  context.save();
+  context.resetTransform();
+  // The first two transformations take place in rect-space. We adjust
+  // manually to make them cartesian.
+  context.translate(translateX + (width / 2), translateY + (height / 2));
+  context.rotate(degToRad(rotate));
+  // Then we scale and flip the context cartesian, so that any shape
+  // drawn will be drawn in cartesian coords.
+  context.scale(scaleX * scaleRatio, -1 * (scaleY * scaleRatio));
   render(context, shape);
-  // context.restore()
+  context.restore();
 };
 
 const renderTransform = wrapTransform((context, shape) =>
@@ -721,42 +879,6 @@ const renderEllipse = (context, shape) => {
   renderStroke(context, shape);
 };
 
-const renderTriangle = (context, shape) => {
-  const {pos0: [x0, y0], pos1: [x1, y1], pos2: [x2, y2]} = shape;
-  triangle(context, x0, y0, x1, y1, x2, y2);
-  renderFill(context, shape);
-  renderStroke(context, shape);
-};
-
-const triangle$1 = (pos0, pos1, pos2, fill$$1=TRANSPARENT, stroke$$1=TRANSPARENT, strokeWidth=1) => ({
-  type: 'triangle',
-  pos0, pos1, pos2, fill: fill$$1, stroke: stroke$$1, strokeWidth
-});
-
-// Construct an equilateral triangle
-// Deshugars to an ordinary Triangle shape.
-const eqtri = (pos, radius, fill$$1, stroke$$1, strokeWidth) =>
-  triangle$1(
-    circ(pos, radius, 0),
-    circ(pos, radius, 120),
-    circ(pos, radius, -120),
-    fill$$1, stroke$$1, strokeWidth
-  );
-
-const renderRect = (context, shape) => {
-  const {pos: [x, y], size: [width, height]} = shape;
-  rect(context, x, y, width, height);
-  renderFill(context, shape);
-  renderStroke(context, shape);
-};
-
-const renderQuad = (context, shape) => {
-  const {tl: [x0, y0], tr: [x1, y1], br: [x2, y2], bl: [x3, y3]} = shape;
-  quad(context, x0, y0, x1, y1, x2, y2, x3, y3);
-  renderFill(context, shape);
-  renderStroke(context, shape);
-};
-
 const renderLine = (context, shape) => {
   const {pos0: [x0, y0], pos1: [x1, y1]} = shape;
   line(context, x0, y0, x1, y1);
@@ -773,35 +895,22 @@ const renderArc = (context, shape) => {
   renderStroke(context, shape);
 };
 
-const getPos = shape => shape.pos;
-const setPos = (shape, vec2d) => set(shape, 'pos', vec2d);
-
-const getSize = shape => shape.size;
-const setSize = (shape, vec2d) => set(shape, 'size', vec2d);
-
-// Define a bezier point.
-// `pos` defines the position of the point.
-// `ctl` defines the control point.
-const bpoint = (pos, ctl) => ({
-  type: 'bpoint',
-  pos, ctl
-});
-
-const renderBezier = (context, shape) => {
-  const {isClosed=false} = shape;
-  const [x0, y0] = shape.bez0.pos;
-  const [cx0, cy0] = shape.bez0.ctl;
-  const [x1, y1] = shape.bez1.pos;
-  const [cx1, cy1] = shape.bez1.ctl;
-  bezier(context, cx0, cy0, cx1, cy1, x0, y0, x1, y1, isClosed);
+const renderTriangle = (context, shape) => {
+  const {pos0: [x0, y0], pos1: [x1, y1], pos2: [x2, y2]} = shape;
+  triangle$1(context, x0, y0, x1, y1, x2, y2);
+  renderFill(context, shape);
   renderStroke(context, shape);
-  if (isClosed) {
-    renderFill(context, shape);
-  }
 };
 
-const renderPoly = (context, shape) => {
-  const {isClosed=false} = shape;
+const renderRect = (context, shape) => {
+  const {pos: [x, y], size: [width, height]} = shape;
+  rect(context, x, y, width, height);
+  renderFill(context, shape);
+  renderStroke(context, shape);
+};
+
+const renderPolygon = (context, shape) => {
+  const {isClosed=true} = shape;
   const [p0, ...px] = shape.points;
   const [x0, y0] = p0;
   context.beginPath();
@@ -812,6 +921,19 @@ const renderPoly = (context, shape) => {
   if (isClosed) {
     context.closePath();
   }
+  renderStroke(context, shape);
+  if (isClosed) {
+    renderFill(context, shape);
+  }
+};
+
+const renderBezier = (context, shape) => {
+  const {isClosed=false} = shape;
+  const [x0, y0] = shape.bez0.pos;
+  const [cx0, cy0] = shape.bez0.ctl;
+  const [x1, y1] = shape.bez1.pos;
+  const [cx1, cy1] = shape.bez1.ctl;
+  bezier(context, cx0, cy0, cx1, cy1, x0, y0, x1, y1, isClosed);
   renderStroke(context, shape);
   if (isClosed) {
     renderFill(context, shape);
@@ -845,10 +967,8 @@ const renderShape = (context, shape) => {
     renderTriangle(context, shape);
   } else if (type === 'rect') {
     renderRect(context, shape);
-  } else if (type === 'quad') {
-    renderQuad(context, shape);
-  } else if (type === 'poly') {
-    renderPoly(context, shape);
+  } else if (type === 'polygon') {
+    renderPolygon(context, shape);
   } else if (type === 'line') {
     renderLine(context, shape);
   } else if (type === 'arc') {
@@ -867,87 +987,62 @@ const renderShape = (context, shape) => {
 };
 
 var shape = Object.freeze({
-	renderTransform: renderTransform,
-	renderGroup: renderGroup,
-	renderEllipse: renderEllipse,
-	renderTriangle: renderTriangle,
-	triangle: triangle$1,
-	eqtri: eqtri,
-	renderRect: renderRect,
-	renderQuad: renderQuad,
-	renderLine: renderLine,
-	renderArc: renderArc,
 	getPos: getPos,
 	setPos: setPos,
 	getSize: getSize,
 	setSize: setSize,
 	bpoint: bpoint,
+	Ellipse: Ellipse,
+	Triangle: Triangle,
+	Eqtri: Eqtri,
+	Transform: Transform,
+	renderTransform: renderTransform,
+	renderGroup: renderGroup,
+	renderEllipse: renderEllipse,
+	renderLine: renderLine,
+	renderArc: renderArc,
+	renderTriangle: renderTriangle,
+	renderRect: renderRect,
+	renderPolygon: renderPolygon,
 	renderBezier: renderBezier,
-	renderPoly: renderPoly,
 	renderBackground: renderBackground,
 	renderShapes: renderShapes,
 	renderShape: renderShape
 });
 
-const setupCanvas2D = options => {
-  const {canvas, width, height, scaleRatio=DEVICE_PIXEL_RATIO} = options;
-  const {smooth=true} = options;
-  const canvasWidth = width * scaleRatio;
-  const canvasHeight = height * scaleRatio;
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
-  canvas.style.width = width + 'px';
-  canvas.style.height = height + 'px';
-  const context = canvas.getContext('2d');
-  context.imageSmoothingEnabled = smooth;
-  // Assign scaleRatio to context so we have it for calculations later.
-  context.scaleRatio = scaleRatio;
-  return context
+const ORIGIN$1 = Object.freeze([0 , 0]);
+
+const gridPos = (n, [width, height], [cols, rows], origin=ORIGIN$1) => {
+  n = Math.max(n, 1);
+  cols = Math.max(1, cols);
+  rows = Math.max(1, rows);
+  width = Math.abs(width);
+  height = Math.abs(height);
+  const [ox, oy] = origin;
+  const uw = width / cols;
+  const uh = height / rows;
+  const ncol = n % cols;
+  const nrow = Math.ceil(n / cols);
+
+  return [
+    ((ncol * uw) + (uw / 2)) - (width / 2) + ox,
+    ((nrow * uh) - (uh / 2)) - (height / 2) - oy
+  ]
 };
 
-// Given a set of options, configures a canvas element
-// for 2D cartesian space.
-// Returns a context object containing canvas 2D context
-const setupCartesianCanvas = options => {
-  const context = setupCanvas2D(options);
-  // Transform canvas coords to make them cartesian
-  transformCartesian(
-    context,
-    context.canvas.width,
-    context.canvas.height,
-    context.scaleRatio
-  );
-  return context
+// TODO
+// export const snapToGrid = (pos, width, height, cols, rows) => {}
+
+// Returns an array of vec2d arrays.
+const grid = (size, units, origin=ORIGIN$1) => {
+  const [cols, rows] = units;
+  const f = n => gridPos(n, size, units, origin);
+  return rangef$1(f, 1, cols * rows)
 };
 
-// Read a mouse or other event with client rect coords as cartesian
-// coords.
-const readEventCartesian = (event, {canvas, scaleRatio}) => [
-  event.clientX - ((canvas.width / scaleRatio) / 2),
-  (event.clientY - ((canvas.height / scaleRatio) / 2))
-];
-
-const IMG_EVENT_OPTIONS = {once: true, capture: false};
-
-// Load an image from a given `src`.
-// Returns a promise for the image.
-const loadImage = src => {
-  return new Promise((resolve, reject) => {
-    var img = new Image(); // Create new img element
-    img.addEventListener('load', e => resolve(img), IMG_EVENT_OPTIONS);
-    // Set source path
-    img.src = 'myImage.png';
-  })
-};
-
-const loadImages$1 = (srcs) => Promise.all(srcs.map(loadImage));
-
-var dom = Object.freeze({
-	setupCanvas2D: setupCanvas2D,
-	setupCartesianCanvas: setupCartesianCanvas,
-	readEventCartesian: readEventCartesian,
-	loadImage: loadImage,
-	loadImages: loadImages$1
+var grid$1 = Object.freeze({
+	gridPos: gridPos,
+	grid: grid
 });
 
 const EVENTS = [
@@ -976,7 +1071,7 @@ const init = options => {
   const sketch = {};
   const {middleware=id} = options;
   const xoptions = middleware(options);
-  const {update=id, el, setup, draw} = xoptions;
+  const {el, update=id, setup=id, draw} = xoptions;
   const {preload=[], preloaded=id} = xoptions;
 
   sketch.state = setup();
@@ -1028,6 +1123,7 @@ exports.color = color;
 exports.rgba = rgba$1;
 exports.hsla = hsla$1;
 exports.vec2d = vec2d;
+exports.grid = grid$1;
 exports.sketch = sketch;
 
 return exports;

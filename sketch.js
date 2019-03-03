@@ -26,7 +26,7 @@ export const init = options => {
   const sketch = {}
   const {middleware=id} = options
   const xoptions = middleware(options)
-  const {update=id, el, setup, draw} = xoptions
+  const {el, update=id, setup=id, draw} = xoptions
   const {preload=[], preloaded=id} = xoptions
 
   sketch.state = setup()

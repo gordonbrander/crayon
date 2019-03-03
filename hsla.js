@@ -5,7 +5,7 @@ import {clamp, mult, lerp as lerpn} from './math'
 // Validates inputs and makes sure the result is a valid color.
 export const hsla = (h=0, s=0, l=0, a=1) => ({
   type: 'hsla',
-  h: h % 360,
+  h: (h % 360) + 360,
   s: clamp(s, 0, 1),
   l: clamp(l, 0, 1),
   a: clamp(a, 0, 1)

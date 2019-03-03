@@ -15,10 +15,12 @@ All of these tiny tools are optional. You can pick and choose the ones you want.
 TODO:
 
 - A tiny 2D physics library
+- A tweening library
 - Seeded random number generator
 
 Maybe later:
 
+- Some workflow for generating gifs
 - WebGL backend
 
 Motivation

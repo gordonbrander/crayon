@@ -14,15 +14,20 @@ export const setX = setter(getX, ([x, y], n) => [n, y])
 export const getY = ([x, y]) => y
 export const setY = setter(getY, ([x, y], n) => [x, n])
 
-export const setXY = (vec2d, x, y) => (
-    vec2d.x === x && vec2d.y === y
-  ? vec2d
-  : [x, y]
-)
+// Update x and y fields in a vec2d.
+// Returns a new vector if this would actually change anything.
+export const setXY = (v, x, y) => v.x !== x || v.y !== y ? [x, y] : v
+
+// Mutate add
+const add_ = (v, [x1, y1]) => {
+  v[0] = v[0] + x1
+  v[1] = v[1] + y1
+}
 
 export const add = ([x0, y0], [x1, y1]) => [x0 + x1, y0 + y1]
 export const sub = ([x0, y0], [x1, y1]) => [x0 - x1, y0 - y1]
 export const mult = ([x, y], scalar) => [x * scalar, y * scalar]
+export const scale = mult
 // Return the inverse of a vector
 export const inv = v => mult(v, -1)
 export const multX = ([x, y], scalar) => [x * scalar, y]
@@ -55,18 +60,7 @@ export const norm = v => div(v, mag(v))
 
 export const rotation = ([x, y]) => radToDeg(Math.atan2(y, x))
 
-// Rotate a vector by n
-export const rot = (v, deg) => {
-  const [x, y] = v
-  const rad = degToRad(deg)
-  const len = mag(v)
-  return [
-    round(Math.cos(rad) * len, PRECISION),
-    round(Math.sin(rad) * len, PRECISION)
-  ]
-}
-
-// Calculate a point along a circle
+// Calculate points along a circle.
 // `[x, y]` defines the origin of the circle.
 // `radius` defines the circle.
 // `deg` defines the angle of rotation in degrees.
@@ -77,6 +71,22 @@ export const circ = ([x, y], radius, deg) => {
     round(y + radius * Math.sin(rad), PRECISION)
   ]
 }
+
+// Calculate the centroid (center point) of a polygon
+// (as an array of array vec2d points).
+// Note this is the centerpoint by shape, not the centerpoint by mass.
+// https://en.wikipedia.org/wiki/Centroid#Centroid_of_polygon
+export const centroid = points =>
+  mult(points.reduce(add_, [0, 0]), 1 / points.length)
+
+
+// Rotate an array of vec2d points along their center axis.
+// export const rotate = (points, deg) => {
+//   const c = centroid(points)
+//   // FIXME this isn't right because I need to figure out current angle
+//   // of rotation.
+//   return points.map(v => circ(c, dist(c, v), deg))
+// }
 
 // Calculate the slope of a line between two points.
 // https://math.stackexchange.com/questions/707673/find-angle-in-degrees-from-one-point-to-another-in-2d-space

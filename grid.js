@@ -2,7 +2,7 @@ import {rangef} from './utils'
 
 const ORIGIN = Object.freeze([0 , 0])
 
-export const gridPos = (n, width, height, cols, rows, origin=ORIGIN) => {
+export const gridPos = (n, [width, height], [cols, rows], origin=ORIGIN) => {
   n = Math.max(n, 1)
   cols = Math.max(1, cols)
   rows = Math.max(1, rows)
@@ -24,7 +24,8 @@ export const gridPos = (n, width, height, cols, rows, origin=ORIGIN) => {
 // export const snapToGrid = (pos, width, height, cols, rows) => {}
 
 // Returns an array of vec2d arrays.
-export const grid = (shape, width, height, cols, rows, origin=ORIGIN) => {
-  const f = n => gridPos(n, width, height, cols, rows, origin)
+export const grid = (size, units, origin=ORIGIN) => {
+  const [cols, rows] = units
+  const f = n => gridPos(n, size, units, origin)
   return rangef(f, 1, cols * rows)
 }

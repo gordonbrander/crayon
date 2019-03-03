@@ -58,7 +58,12 @@ export const rect = (context, x, y, width, height) => {
   context.rect(x - (width / 2), y - (height / 2), width, height)
 }
 
-export const fivegon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
+export const background = context => {
+  const {canvas: {width, height}} = context
+  rect(context, 0, 0, width, height)
+}
+
+export const pentagon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
   context.beginPath()
   context.moveTo(x0, y0)
   context.lineTo(x1, y1)
@@ -68,7 +73,7 @@ export const fivegon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
   context.closePath()
 }
 
-export const sixgon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5) => {
+export const hexagon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5) => {
   context.beginPath()
   context.moveTo(x0, y0)
   context.lineTo(x1, y1)
@@ -77,6 +82,19 @@ export const sixgon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5) 
   context.lineTo(x4, y4)
   context.lineTo(x5, y5)
   context.closePath()
+}
+
+export const polygon = (context, points, isClosed=true) => {
+  const [p0, ...px] = points
+  const [x0, y0] = p0
+  context.beginPath()
+  context.moveTo(x0, y0)
+  for (let [x, y] of px) {
+    context.lineTo(x, y)
+  }
+  if (isClosed) {
+    context.closePath()
+  }
 }
 
 export const line = (context, x0, y0, x1, y1) => {
@@ -106,6 +124,12 @@ export const clear = (context, x, y, width, height) => {
   context.clearRect(x - (width / 2), y - (height / 2), width, height)
 }
 
+// Erase entire canvas
+export const erase = context => {
+  const {canvas: {width, height}} = context
+  context.clearRect(0, 0, width, height)
+}
+
 export const image = (context, img, x, y) => {
   const width = img.naturalWidth
   const height = img.naturalHeight
@@ -115,15 +139,15 @@ export const image = (context, img, x, y) => {
 
 // Convert to cartesian coords so that origin (0, 0) is at center.
 // An elegant coordinate system for a more civilized age.
-// Additionally, you can provide a scalingFactor to compensate for
+// Additionally, you can provide a scaleRatio to compensate for
 // retina displays.
 // See https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setTransform.
-export const transformCartesian = (context, width, height, scalingFactor) => {
+export const transformCartesian = (context, width, height, scaleRatio) => {
   context.setTransform(
-    1 * scalingFactor,
+    1 * scaleRatio,
     0,
     0,
-    -1 * scalingFactor,
+    -1 * scaleRatio,
     (width / 2),
     (height / 2)
   )

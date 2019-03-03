@@ -5,9 +5,9 @@ https://developer.mozilla.org/en-US/docs/Web/CSS/color_value
 hslaToRgba and rgba2Hsla are based on
 https://github.com/Gozala/color.flow/blob/master/src/Color.js
 */
-import {fmod, degToRad} from './math'
-import * as hsla from './hsla'
-import * as rgba from './rgba'
+import {fmod, degToRad} from './math.js'
+import * as hsla from './hsla.js'
+import * as rgba from './rgba.js'
 
 // Get the alpha value for some color type.
 export const getA = color => (

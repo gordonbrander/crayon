@@ -1,31 +1,14 @@
-import {rangef} from './utils'
-
-const ORIGIN = Object.freeze([0 , 0])
-
-export const gridPos = (n, [width, height], [cols, rows], origin=ORIGIN) => {
-  n = Math.max(n, 1)
-  cols = Math.max(1, cols)
-  rows = Math.max(1, rows)
-  width = Math.abs(width)
-  height = Math.abs(height)
-  const [ox, oy] = origin
-  const uw = width / cols
-  const uh = height / rows
-  const ncol = n % cols
-  const nrow = Math.ceil(n / cols)
-
-  return [
-    ((ncol * uw) + (uw / 2)) - (width / 2) + ox,
-    ((nrow * uh) - (uh / 2)) - (height / 2) - oy
-  ]
-}
-
-// TODO
-// export const snapToGrid = (pos, width, height, cols, rows) => {}
-
-// Returns an array of vec2d arrays.
-export const grid = (size, units, origin=ORIGIN) => {
-  const [cols, rows] = units
-  const f = n => gridPos(n, size, units, origin)
-  return rangef(f, 1, cols * rows)
+export const grid = (width, height, cols, rows, x=0, y=0) => {
+  const points = []
+  const colWidth = width / cols
+  const colHeight = height / rows
+  for (let i = 0; i < (cols * rows); i++) {
+    const colN = i % cols
+    const rowN = Math.floor(i / cols)
+    points.push([
+      (colN * colWidth) + x,
+      (rowN * colHeight) + y
+    ])
+  }
+  return points
 }

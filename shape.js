@@ -11,21 +11,20 @@ It doesn't care whether you bash it, or copy-on-write.
 Stops short of being a full vector graphics API though. You should use
 SVG for that.
 */
-import * as draw from './draw'
-import {degToRad} from './math'
-import {circ, isSame, add} from './vec2d'
-import {set} from './utils'
-import {isTransparent, toCSS} from './color'
-import {hsla, TRANSPARENT} from './hsla'
+import * as draw from './draw.js'
+import {circ, isSame, add} from './vec2d.js'
+import {set} from './utils.js'
+import {isTransparent, toCSS} from './color.js'
+import {hsla, TRANSPARENT} from './hsla.js'
 
 const ORIGIN = Object.freeze([0 , 0])
 const ACTUAL_SIZE = Object.freeze([1, 1])
 
 export const getPos = shape => shape.pos
-export const setPos = (shape, v) => set(shape, 'pos', v)
+export const setPos = (shape, vec2d) => set(shape, 'pos', vec2d)
 
 export const getSize = shape => shape.size
-export const setSize = (shape, v) => set(shape, 'size', v)
+export const setSize = (shape, vec2d) => set(shape, 'size', vec2d)
 
 // Define a bezier point.
 // `pos` defines the position of the point.
@@ -35,52 +34,46 @@ export const bpoint = (pos, ctl) => ({
   pos, ctl
 })
 
-// Create an ellipse shape
-export const Ellipse = (pos, raidus, fill=TRANSPARENT, stroke=TRANSPARENT, strokeWidth=1) => ({
+export const ellipse = (pos, raidus, fill=TRANSPARENT, stroke=TRANSPARENT, strokeWidth=1) => ({
   type: 'ellipse',
   pos, radius, fill, stroke, strokeWidth
 })
 
-// Create a triangle shape
-export const Triangle = (pos0, pos1, pos2, fill=TRANSPARENT, stroke=TRANSPARENT, strokeWidth=1) => ({
+export const triangle = (pos0, pos1, pos2, fill=TRANSPARENT, stroke=TRANSPARENT, strokeWidth=1) => ({
   type: 'triangle',
   pos0, pos1, pos2, fill, stroke, strokeWidth
 })
 
 // Construct an equilateral triangle
 // Deshugars to an ordinary Triangle shape.
-export const Eqtri = (pos, radius, fill, stroke, strokeWidth) => triangle(
+export const eqtri = (pos, radius, fill, stroke, strokeWidth) => triangle(
   circ(pos, radius, 0),
   circ(pos, radius, 120),
   circ(pos, radius, -120),
   fill, stroke, strokeWidth
 )
 
-// Create a transform shape
-export const Transform = (shape, translate=ORIGIN, scale=ACTUAL_SIZE, rotate=0) => ({
-  type: 'transform',
-  translate,
-  scale,
-  rotate,
-  shape
-})
-
 const wrapTransform = render => (context, shape) => {
   const {scaleRatio=1, canvas: {width, height}} = context
-  const {translate=ORIGIN, scale=ACTUAL_SIZE, rotate=0} = shape
+  const {translate=ORIGIN, scale=ACTUAL_SIZE, skew=ORIGIN, rotate=0} = shape
   const [translateX, translateY] = translate
   const [scaleX, scaleY] = scale
-  context.save()
-  context.resetTransform()
-  // The first two transformations take place in rect-space. We adjust
-  // manually to make them cartesian.
-  context.translate(translateX + (width / 2), translateY + (height / 2))
-  context.rotate(degToRad(rotate))
-  // Then we scale and flip the context cartesian, so that any shape
-  // drawn will be drawn in cartesian coords.
-  context.scale(scaleX * scaleRatio, -1 * (scaleY * scaleRatio))
+  const [skewX, skewY] = skew
+  // context.save()
+  // Sets transform while retaining cartesian coords
+  context.setTransform(
+    scaleX * scaleRatio,
+    skewX,
+    skewY,
+    (scaleY * scaleRatio),
+    translateX + (width / 2),
+    translateY + (height / 2)
+  )
+  if (rotate > 0 || rotate < 0) {
+    context.rotate(rotate)
+  }
   render(context, shape)
-  context.restore()
+  // context.restore()
 }
 
 export const renderTransform = wrapTransform((context, shape) =>
@@ -113,6 +106,27 @@ export const renderEllipse = (context, shape) => {
   renderStroke(context, shape)
 }
 
+export const renderTriangle = (context, shape) => {
+  const {pos0: [x0, y0], pos1: [x1, y1], pos2: [x2, y2]} = shape
+  draw.triangle(context, x0, y0, x1, y1, x2, y2)
+  renderFill(context, shape)
+  renderStroke(context, shape)
+}
+
+export const renderRect = (context, shape) => {
+  const {pos: [x, y], size: [width, height]} = shape
+  draw.rect(context, x, y, width, height)
+  renderFill(context, shape)
+  renderStroke(context, shape)
+}
+
+export const renderQuad = (context, shape) => {
+  const {tl: [x0, y0], tr: [x1, y1], br: [x2, y2], bl: [x3, y3]} = shape
+  draw.quad(context, x0, y0, x1, y1, x2, y2, x3, y3)
+  renderFill(context, shape)
+  renderStroke(context, shape)
+}
+
 export const renderLine = (context, shape) => {
   const {pos0: [x0, y0], pos1: [x1, y1]} = shape
   draw.line(context, x0, y0, x1, y1)
@@ -129,29 +143,6 @@ export const renderArc = (context, shape) => {
   renderStroke(context, shape)
 }
 
-export const renderTriangle = (context, shape) => {
-  const {pos0: [x0, y0], pos1: [x1, y1], pos2: [x2, y2]} = shape
-  draw.triangle(context, x0, y0, x1, y1, x2, y2)
-  renderFill(context, shape)
-  renderStroke(context, shape)
-}
-
-export const renderRect = (context, shape) => {
-  const {pos: [x, y], size: [width, height]} = shape
-  draw.rect(context, x, y, width, height)
-  renderFill(context, shape)
-  renderStroke(context, shape)
-}
-
-export const renderPolygon = (context, shape) => {
-  const {points, isClosed=true} = shape
-  draw.polygon(context, points, isClosed)
-  renderStroke(context, shape)
-  if (isClosed) {
-    renderFill(context, shape)
-  }
-}
-
 export const renderBezier = (context, shape) => {
   const {isClosed=false} = shape
   const [x0, y0] = shape.bez0.pos
@@ -159,6 +150,24 @@ export const renderBezier = (context, shape) => {
   const [x1, y1] = shape.bez1.pos
   const [cx1, cy1] = shape.bez1.ctl
   draw.bezier(context, cx0, cy0, cx1, cy1, x0, y0, x1, y1, isClosed)
+  renderStroke(context, shape)
+  if (isClosed) {
+    renderFill(context, shape)
+  }
+}
+
+export const renderPoly = (context, shape) => {
+  const {isClosed=false} = shape
+  const [p0, ...px] = shape.points
+  const [x0, y0] = p0
+  context.beginPath()
+  context.moveTo(x0, y0)
+  for (let [x, y] of px) {
+    context.lineTo(x, y)
+  }
+  if (isClosed) {
+    context.closePath()
+  }
   renderStroke(context, shape)
   if (isClosed) {
     renderFill(context, shape)
@@ -192,8 +201,10 @@ export const renderShape = (context, shape) => {
     renderTriangle(context, shape)
   } else if (type === 'rect') {
     renderRect(context, shape)
-  } else if (type === 'polygon') {
-    renderPolygon(context, shape)
+  } else if (type === 'quad') {
+    renderQuad(context, shape)
+  } else if (type === 'poly') {
+    renderPoly(context, shape)
   } else if (type === 'line') {
     renderLine(context, shape)
   } else if (type === 'arc') {

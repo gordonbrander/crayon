@@ -1,4 +1,4 @@
-import {transformCartesian} from './draw'
+import {transformCartesian} from './draw.js'
 
 export const DEVICE_PIXEL_RATIO = (
     'devicePixelRatio' in window

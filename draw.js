@@ -1,5 +1,6 @@
-import {DEVICE_PIXEL_RATIO} from './dom'
-import {TWO_PI} from './math'
+import {DEVICE_PIXEL_RATIO} from './dom.js'
+import {TWO_PI, degrees} from './math.js'
+import {circ} from './vec2d.js'
 
 export const ROUND = 'round'
 export const BEVEL = 'bevel'
@@ -55,15 +56,10 @@ export const quad = (context, x0, y0, x1, y1, x2, y2, x3, y3) => {
 export const rect = (context, x, y, width, height) => {
   // Draw rect from center, not top left
   context.beginPath()
-  context.rect(x - (width / 2), y - (height / 2), width, height)
+  context.rect(x, y, width, height)
 }
 
-export const background = context => {
-  const {canvas: {width, height}} = context
-  rect(context, 0, 0, width, height)
-}
-
-export const pentagon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
+export const fivegon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
   context.beginPath()
   context.moveTo(x0, y0)
   context.lineTo(x1, y1)
@@ -73,7 +69,24 @@ export const pentagon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4) => {
   context.closePath()
 }
 
-export const hexagon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5) => {
+export const pentagon = (context, x, y, size) => {
+  const step = 360 / 5
+  const origin = [(size / 2) + x , (size / 2) + y]
+  context.beginPath()
+  const [x0, y0] = circ(origin, size / 2, 0)
+  context.moveTo(x0, y0)
+  const [x1, y1] = circ(origin, size / 2, degrees(step))
+  context.lineTo(x1, y1)
+  const [x2, y2] = circ(origin, size / 2, degrees(step * 2))
+  context.lineTo(x2, y2)
+  const [x3, y3] = circ(origin, size / 2, degrees(step * 3))
+  context.lineTo(x3, y3)
+  const [x4, y4] = circ(origin, size / 2, degrees(step * 4))
+  context.lineTo(x4, y4)
+  context.closePath()
+}
+
+export const sixgon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5) => {
   context.beginPath()
   context.moveTo(x0, y0)
   context.lineTo(x1, y1)
@@ -84,17 +97,23 @@ export const hexagon = (context, x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5)
   context.closePath()
 }
 
-export const polygon = (context, points, isClosed=true) => {
-  const [p0, ...px] = points
-  const [x0, y0] = p0
+export const hexagon = (context, x, y, size) => {
+  const step = 360 / 6
+  const origin = [(size / 2) + x , (size / 2) + y]
   context.beginPath()
+  const [x0, y0] = circ(origin, size / 2, 0)
   context.moveTo(x0, y0)
-  for (let [x, y] of px) {
-    context.lineTo(x, y)
-  }
-  if (isClosed) {
-    context.closePath()
-  }
+  const [x1, y1] = circ(origin, size / 2, degrees(step))
+  context.lineTo(x1, y1)
+  const [x2, y2] = circ(origin, size / 2, degrees(step * 2))
+  context.lineTo(x2, y2)
+  const [x3, y3] = circ(origin, size / 2, degrees(step * 3))
+  context.lineTo(x3, y3)
+  const [x4, y4] = circ(origin, size / 2, degrees(step * 4))
+  context.lineTo(x4, y4)
+  const [x5, y5] = circ(origin, size / 2, degrees(step * 5))
+  context.lineTo(x5, y5)
+  context.closePath()
 }
 
 export const line = (context, x0, y0, x1, y1) => {
@@ -124,12 +143,6 @@ export const clear = (context, x, y, width, height) => {
   context.clearRect(x - (width / 2), y - (height / 2), width, height)
 }
 
-// Erase entire canvas
-export const erase = context => {
-  const {canvas: {width, height}} = context
-  context.clearRect(0, 0, width, height)
-}
-
 export const image = (context, img, x, y) => {
   const width = img.naturalWidth
   const height = img.naturalHeight
@@ -139,15 +152,15 @@ export const image = (context, img, x, y) => {
 
 // Convert to cartesian coords so that origin (0, 0) is at center.
 // An elegant coordinate system for a more civilized age.
-// Additionally, you can provide a scaleRatio to compensate for
+// Additionally, you can provide a scalingFactor to compensate for
 // retina displays.
 // See https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setTransform.
-export const transformCartesian = (context, width, height, scaleRatio) => {
+export const transformCartesian = (context, width, height, scalingFactor) => {
   context.setTransform(
-    1 * scaleRatio,
+    1 * scalingFactor,
     0,
     0,
-    -1 * scaleRatio,
+    -1 * scalingFactor,
     (width / 2),
     (height / 2)
   )
